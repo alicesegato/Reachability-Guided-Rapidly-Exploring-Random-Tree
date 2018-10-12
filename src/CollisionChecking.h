@@ -2,7 +2,8 @@
 #define COLLISION_CHECKING_H_
 
 #include <vector>
-
+#include <cmath>
+#include <iostream>
 struct Rectangle
 {
     // Coordinate of the lower left corner of the rectangle
