@@ -166,11 +166,11 @@ namespace ompl
             std::vector<Control *> reachableControls;
 
             /** \brief Compute distance between motions (actually distance between contained states) */
-            double distanceFunction(const Motion *a, const Motion *b) const
+            double distanceFunction(const Motion *qrand, const Motion *qnear) const
             {
-                double d = si_->distance(a->state, b->state);
-                for (base::State *s : (*b).reachableSet)) {
-                  if (si_->distance(s, a->state) < d && si_->isValid(b)) {
+                double d = si_->distance(qrand->state, qnear->state);
+                for (base::State *s : (*qnear).reachableSet)) {
+                  if (si_->distance(s, qrand->state) < d && si_->isValid(s)) {
                     return d;
                   }
                 }
@@ -197,11 +197,25 @@ namespace ompl
             /** \brief Flag indicating whether intermediate states are added to the built tree of motions */
             bool addIntermediateStates_{false};
 
+            void addReachablitySet(Motion *motion){
+              std::vector<base::State *> states;
+              for (double c : reachableControls)
+              {
+                ompl::base::State *result;
+                ompl::control::SpaceInformation::propagate(motion->state, c, steps, result);
+                states->push_back(result);
+                
+              }
+              motion->reachableSet = states;
+            }
+
             /** \brief The random number generator */
             RNG rng_;
 
             /** \brief The most recent goal motion.  Used for PlannerData computation */
             Motion *lastGoalMotion_{nullptr};
+            double inf = std::numeric_limits<double>::infinity();
+            unsigned int cd = 1;
         };
     }
 }
