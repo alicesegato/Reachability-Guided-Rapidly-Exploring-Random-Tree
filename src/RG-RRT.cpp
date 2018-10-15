@@ -152,8 +152,15 @@ ompl::base::PlannerStatus ompl::control::RGRRT::solve(const base::PlannerTermina
         Motion *randReachable =  rSet.get(rIndex);
 
         addReachablitySet(randReachable);
-        randReachable->parent = nmotion;
-        nn_->add(randReachable);
+
+        if (si->checkMotion(nmotion, randReachable))
+        {
+          randReachable->parent = nmotion;
+          nn_->add(randReachable);
+
+          
+        }
+
 
 
 
