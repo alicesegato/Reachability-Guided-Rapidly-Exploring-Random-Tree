@@ -38,7 +38,7 @@
 #define RGRRT_H
 
 #include "ompl/control/planners/PlannerIncludes.h"
-#include "ompl/datastructures/NearestNeighbors.h"
+#include "ompl/datastructures/NearestNeighborsLinear.h"
 
 namespace ompl
 {
@@ -151,7 +151,7 @@ namespace ompl
                 Control *control{nullptr};
 
                 /** \brief The number of steps the control is applied for */
-                unsigned int steps{0};
+                unsigned int steps{1};
 
                 /** \brief The parent motion in the exploration tree */
                 Motion *parent{nullptr};
@@ -169,7 +169,7 @@ namespace ompl
             double distanceFunction(const Motion *qrand, const Motion *qnear) const
             {
                 double d = si_->distance(qrand->state, qnear->state);
-                for (base::State *s : (*qnear).reachableSet)) {
+                for (base::State *s : qnear->reachableSet) {
                   if (si_->distance(s, qrand->state) < d && si_->isValid(s)) {
                     return d;
                   }
@@ -199,12 +199,12 @@ namespace ompl
 
             void addReachablitySet(Motion *motion){
               std::vector<base::State *> states;
-              for (double c : reachableControls)
+              for (Control *c : reachableControls)
               {
                 ompl::base::State *result;
-                ompl::control::SpaceInformation::propagate(motion->state, c, steps, result);
-                states->push_back(result);
-                
+                siC_->propagate(motion->state, c, motion->steps, result);
+                states.push_back(result);
+
               }
               motion->reachableSet = states;
             }

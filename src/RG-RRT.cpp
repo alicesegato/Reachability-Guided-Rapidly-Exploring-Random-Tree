@@ -131,35 +131,41 @@ ompl::base::PlannerStatus ompl::control::RGRRT::solve(const base::PlannerTermina
 
     while (ptc == false)
     {
-        Motion *nmotion;
+        Motion *nmotion = nullptr;
         /* Sample a valid qNear and qrand */
-        while (double d == inf) {
-          /* sample random state (with goal biasing) */
-          if (goal_s && rng_.uniform01() < goalBias_ && goal_s->canSample())
-              goal_s->sampleGoal(rstate);
-          else
-              sampler_->sampleUniform(rstate);
 
-          /* find closest state in the tree */
-          nmotion = nn_->nearest(rmotion);
+          while (nmotion == nullptr) {
+            /* sample random state (with goal biasing) */
+            if (goal_s && rng_.uniform01() < goalBias_ && goal_s->canSample())
+                goal_s->sampleGoal(rstate);
+            else
+                sampler_->sampleUniform(rstate);
 
-          d = distanceFunction(rmotion, nmotion);
-        }
+            /* find closest state in the tree */
+            nmotion = nn_->nearest(rmotion);
+          }
 
-        addReachablitySet(nmotion);
-        auto rSet = nmotion->reachableSet;
-        int rIndex = rand() % rSet.size();
-        Motion *randReachable =  rSet.get(rIndex);
-
-        addReachablitySet(randReachable);
-
-        if (si->checkMotion(nmotion, randReachable))
-        {
-          randReachable->parent = nmotion;
-          nn_->add(randReachable);
-
-          
-        }
+        // addReachablitySet(nmotion);
+        // auto rSet = nmotion->reachableSet;
+        // int rIndex = rand() % rSet.size();
+        // Motion *randReachable =  rSet.get(rIndex);
+        //
+        // addReachablitySet(randReachable);
+        //
+        // if (si->checkMotion(nmotion, randReachable))
+        // {
+        //   randReachable->parent = nmotion;
+        //   nn_->add(randReachable);
+        //
+        //   double dist = 0.0;
+        //   bool solved = goal->isSatisfied(randReachable->state, &dist);
+        //   if (solved)
+        //   {
+        //   //approxdif = dist;
+        //   solution = randReachable;
+        //   break;
+        //   }
+        // }
 
 
 
@@ -168,82 +174,82 @@ ompl::base::PlannerStatus ompl::control::RGRRT::solve(const base::PlannerTermina
         /* sample a random control that attempts to go towards the random state, and also sample a control duration */
         unsigned int cd = controlSampler_->sampleTo(rctrl, nmotion->control, nmotion->state, rmotion->state);
 
-    //     if (addIntermediateStates_)
-    //     {
-    //         // this code is contributed by Jennifer Barry
-    //         std::vector<base::State *> pstates;
-    //         cd = siC_->propagateWhileValid(nmotion->state, rctrl, cd, pstates, true);
-    //
-    //         if (cd >= siC_->getMinControlDuration())
-    //         {
-    //             Motion *lastmotion = nmotion;
-    //             bool solved = false;
-    //             size_t p = 0;
-    //             for (; p < pstates.size(); ++p)
-    //             {
-    //                 /* create a motion */
-    //                 auto *motion = new Motion();
-    //                 motion->state = pstates[p];
-    //                 // we need multiple copies of rctrl
-    //                 motion->control = siC_->allocControl();
-    //                 siC_->copyControl(motion->control, rctrl);
-    //                 motion->steps = 1;
-    //                 motion->parent = lastmotion;
-    //                 lastmotion = motion;
-    //                 nn_->add(motion);
-    //                 double dist = 0.0;
-    //                 solved = goal->isSatisfied(motion->state, &dist);
-    //                 if (solved)
-    //                 {
-    //                     approxdif = dist;
-    //                     solution = motion;
-    //                     break;
-    //                 }
-    //                 if (dist < approxdif)
-    //                 {
-    //                     approxdif = dist;
-    //                     approxsol = motion;
-    //                 }
-    //             }
-    //
-    //             // free any states after we hit the goal
-    //             while (++p < pstates.size())
-    //                 si_->freeState(pstates[p]);
-    //             if (solved)
-    //                 break;
-    //         }
-    //         else
-    //             for (auto &pstate : pstates)
-    //                 si_->freeState(pstate);
-    //     }
-    //     else
-    //     {
-    //         if (cd >= siC_->getMinControlDuration())
-    //         {
-    //             /* create a motion */
-    //             auto *motion = new Motion(siC_);
-    //             si_->copyState(motion->state, rmotion->state);
-    //             siC_->copyControl(motion->control, rctrl);
-    //             motion->steps = cd;
-    //             motion->parent = nmotion;
-    //
-    //             nn_->add(motion);
-    //             double dist = 0.0;
-    //             bool solv = goal->isSatisfied(motion->state, &dist);
-    //             if (solv)
-    //             {
-    //                 approxdif = dist;
-    //                 solution = motion;
-    //                 break;
-    //             }
-    //             if (dist < approxdif)
-    //             {
-    //                 approxdif = dist;
-    //                 approxsol = motion;
-    //             }
-    //         }
-    //     }
-    // }
+        if (addIntermediateStates_)
+        {
+            // this code is contributed by Jennifer Barry
+            std::vector<base::State *> pstates;
+            cd = siC_->propagateWhileValid(nmotion->state, rctrl, cd, pstates, true);
+
+            if (cd >= siC_->getMinControlDuration())
+            {
+                Motion *lastmotion = nmotion;
+                bool solved = false;
+                size_t p = 0;
+                for (; p < pstates.size(); ++p)
+                {
+                    /* create a motion */
+                    auto *motion = new Motion();
+                    motion->state = pstates[p];
+                    // we need multiple copies of rctrl
+                    motion->control = siC_->allocControl();
+                    siC_->copyControl(motion->control, rctrl);
+                    motion->steps = 1;
+                    motion->parent = lastmotion;
+                    lastmotion = motion;
+                    nn_->add(motion);
+                    double dist = 0.0;
+                    solved = goal->isSatisfied(motion->state, &dist);
+                    if (solved)
+                    {
+                        approxdif = dist;
+                        solution = motion;
+                        break;
+                    }
+                    if (dist < approxdif)
+                    {
+                        approxdif = dist;
+                        approxsol = motion;
+                    }
+                }
+
+                // free any states after we hit the goal
+                while (++p < pstates.size())
+                    si_->freeState(pstates[p]);
+                if (solved)
+                    break;
+            }
+            else
+                for (auto &pstate : pstates)
+                    si_->freeState(pstate);
+        }
+        else
+        {
+            if (cd >= siC_->getMinControlDuration())
+            {
+                /* create a motion */
+                auto *motion = new Motion(siC_);
+                si_->copyState(motion->state, rmotion->state);
+                siC_->copyControl(motion->control, rctrl);
+                motion->steps = cd;
+                motion->parent = nmotion;
+
+                nn_->add(motion);
+                double dist = 0.0;
+                bool solv = goal->isSatisfied(motion->state, &dist);
+                if (solv)
+                {
+                    approxdif = dist;
+                    solution = motion;
+                    break;
+                }
+                if (dist < approxdif)
+                {
+                    approxdif = dist;
+                    approxsol = motion;
+                }
+            }
+        }
+    }
 
     bool solved = false;
     bool approximate = false;
@@ -288,7 +294,7 @@ ompl::base::PlannerStatus ompl::control::RGRRT::solve(const base::PlannerTermina
     return base::PlannerStatus(solved, approximate);
 }
 
-void ompl::control::RRT::getPlannerData(base::PlannerData &data) const
+void ompl::control::RGRRT::getPlannerData(base::PlannerData &data) const
 {
     Planner::getPlannerData(data);
 
