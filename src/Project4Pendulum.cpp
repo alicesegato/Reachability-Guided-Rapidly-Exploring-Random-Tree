@@ -28,32 +28,45 @@ public:
         return 0;
     }
 
-    void project(const ompl::base::State */* state */, Eigen::Ref<Eigen::VectorXd> /* projection */) const override
+    void project(const ompl::base::State * state , Eigen::Ref<Eigen::VectorXd> projection) const override
     {
         // TODO: Your projection for the pendulum
     }
 };
 
-void pendulumODE(const ompl::control::ODESolver::StateType &/* q */, const ompl::control::Control */* control */,
+void pendulumODE(const ompl::control::ODESolver::StateType &/* q */, const ompl::control::Control * control,
                  ompl::control::ODESolver::StateType &/* qdot */)
 {
     // TODO: Fill in the ODE for the pendulum's dynamics
 }
 
-ompl::control::SimpleSetupPtr createPendulum(double /* torque */)
+ompl::control::SimpleSetupPtr createPendulum(double torque)
 {
     // TODO: Create and setup the pendulum's state space, control space, validity checker, everything you need for
     // planning.
+
+    auto theta(std::make_shared<ompl::base::SO2StateSpace>());
+    auto omega(std::make_shared<ompl::base::RealVectorStateSpace>(1));
+
+    ompl::base::StateSpacePtr space;
+    space = theta + omega;
+    // State Space
+
+    // Control Space
+    ompl::control::ControlSpacePtr controlSpace(new ompl::control::RealVectorControlSpace(compoundSpace, 1));
+    // Output
+    ompl::control::SimpleSetup ss(controlSpace);
+
     return nullptr;
 }
 
-void planPendulum(ompl::control::SimpleSetupPtr &/* ss */, int /* choice */)
+void planPendulum(ompl::control::SimpleSetupPtr &ss, int choice)
 {
     // TODO: Do some motion planning for the pendulum
     // choice is what planner to use.
 }
 
-void benchmarkPendulum(ompl::control::SimpleSetupPtr &/* ss */)
+void benchmarkPendulum(ompl::control::SimpleSetupPtr &ss)
 {
     // TODO: Do some benchmarking for the pendulum
 }
