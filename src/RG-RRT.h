@@ -171,7 +171,7 @@ namespace ompl
             {
                 double d = si_->distance(qrand->state, qnear->state);
                 for (base::State *s : qnear->reachableSet) {
-                  if (si_->distance(s, qrand->state) < d && si_->isValid(s)) {
+                  if (si_->distance(s, qrand->state) < d) {
                     return d;
                   }
                 }
@@ -221,8 +221,8 @@ namespace ompl
                 Control *c = siC_->allocControl();
                 RealVectorControlSpace::ControlType *c_modify = c->as<RealVectorControlSpace::ControlType>();
                 c_modify->values[0] = controlAsRealVect;
-                ompl::base::State *result;
-                siC_->propagate(motion->state, c, motion->steps, result);
+                ompl::base::State *result = siC_->allocState();
+                siC_->propagate(motion->state, c, 1, result);
                 states.push_back(result);
                 controlAsRealVect = controlAsRealVect + approxStep;
               }
