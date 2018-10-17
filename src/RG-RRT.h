@@ -218,7 +218,9 @@ namespace ompl
               double approxStep = diff/10;
 
               for (size_t i = 0; i < 10; i++) {
-                Control *c = &controlAsRealVect;
+                Control *c = siC_->allocControl();
+                RealVectorControlSpace::ControlType *c_modify = c->as<RealVectorControlSpace::ControlType>();
+                c_modify->values[0] = controlAsRealVect;
                 ompl::base::State *result;
                 siC_->propagate(motion->state, c, motion->steps, result);
                 states.push_back(result);
