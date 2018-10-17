@@ -5,7 +5,7 @@
 //////////////////////////////////////
 
 #include <iostream>
-
+#include <cmath>
 #include <ompl/base/ProjectionEvaluator.h>
 
 #include <ompl/control/SimpleSetup.h>
@@ -34,6 +34,10 @@ public:
     }
 };
 
+bool isValidStatePendulum(ompl::control::SpaceInformation *si, ompl::base::state *state){
+      return si->satifiesBounds(state);
+}
+
 void pendulumODE(const ompl::control::ODESolver::StateType &/* q */, const ompl::control::Control * control,
                  ompl::control::ODESolver::StateType &/* qdot */)
 {
@@ -45,19 +49,47 @@ ompl::control::SimpleSetupPtr createPendulum(double torque)
     // TODO: Create and setup the pendulum's state space, control space, validity checker, everything you need for
     // planning.
 
+    // State Space
     auto theta(std::make_shared<ompl::base::SO2StateSpace>());
     auto omega(std::make_shared<ompl::base::RealVectorStateSpace>(1));
+    ompl::base::RealVectorBounds wbounds(1);
+    wbounds.setLow(-10);
+    wbounds.setHigh(10);
+    omega->as<ompl::base::RealVectorStateSpace>()->setBounds(wbounds);
 
     ompl::base::StateSpacePtr space;
     space = theta + omega;
-    // State Space
 
     // Control Space
-    ompl::control::ControlSpacePtr controlSpace(new ompl::control::RealVectorControlSpace(compoundSpace, 1));
-    // Output
-    ompl::control::SimpleSetup ss(controlSpace);
+    ompl::control::ControlSpacePtr cSpace(new ompl::control::RealVectorControlSpace(space, 1));
 
-    return nullptr;
+    // Set the bounds for Control SpaceInformation
+    ompl::base::RealVectorBounds cbounds(1);
+    cbounds.setLow(-torque);
+    cbounds.setHigh(torque);
+    cSpace->as<ompl::base::RealVectorControlSpace>()->setBounds(cbounds);
+
+
+    ompl::control::SimpleSetupPtr ss(cSpace);
+
+    ss.setStateValidityChecker(std::bind(isValidStatePendulum, ss->getSpaceInformation().get(), _1);
+
+    // Propagation Routine
+
+
+    //Start and Goal States
+    ompl::base::ScopedState<> start(space);
+    start[0] = -M_PI_2;
+    start[1] = 0;
+
+    ompl::base::ScopedState<> goal(space);
+    goal[0] = M_PI_2;
+    goal[1] = 0;
+
+    ss->setStartAndGoalStates(start, goal);
+
+
+    return ss;
 }
 
 void planPendulum(ompl::control::SimpleSetupPtr &ss, int choice)
