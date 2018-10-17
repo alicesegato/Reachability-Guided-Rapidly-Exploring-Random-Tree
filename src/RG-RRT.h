@@ -213,15 +213,16 @@ namespace ompl
               std::vector<base::State *> states;
               base::RealVectorBounds bounds = siC_->getControlSpace()->as<RealVectorControlSpace>()->getBounds();
               std::vector<double> min = bounds.low;
-              std::vector<double> diff = bounds.getDifference();
-              std::vector<double> controlAsRealVect = min;
+              double diff = bounds.getDifference().at(0);
+              double controlAsRealVect = min.at(0);
+              double approxStep = diff/10;
+
               for (size_t i = 0; i < 10; i++) {
-                double approxStep = diff[0]/10;
-                Control *c = &controlAsRealVect[0];
+                Control *c = &controlAsRealVect;
                 ompl::base::State *result;
                 siC_->propagate(motion->state, c, motion->steps, result);
                 states.push_back(result);
-                double controlAsRealVect = controlAsRealVect + approxStep;
+                controlAsRealVect = controlAsRealVect + approxStep;
               }
               motion->reachableSet = states;
 
