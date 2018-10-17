@@ -44,6 +44,7 @@ ompl::control::RGRRT::RGRRT(const SpaceInformationPtr &si) : base::Planner(si, "
     specs_.approximateSolutions = true;
     siC_ = si.get();
 
+
     Planner::declareParam<double>("goal_bias", this, &RGRRT::setGoalBias, &RGRRT::getGoalBias, "0.:.05:1.");
     Planner::declareParam<bool>("intermediate_states", this, &RGRRT::setIntermediateStates, &RGRRT::getIntermediateStates);
 }
@@ -143,33 +144,9 @@ ompl::base::PlannerStatus ompl::control::RGRRT::solve(const base::PlannerTermina
 
             /* find closest state in the tree */
             nmotion = nn_->nearest(rmotion);
+
           }
-
-        // addReachablitySet(nmotion);
-        // auto rSet = nmotion->reachableSet;
-        // int rIndex = rand() % rSet.size();
-        // Motion *randReachable =  rSet.get(rIndex);
-        //
-        // addReachablitySet(randReachable);
-        //
-        // if (si->checkMotion(nmotion, randReachable))
-        // {
-        //   randReachable->parent = nmotion;
-        //   nn_->add(randReachable);
-        //
-        //   double dist = 0.0;
-        //   bool solved = goal->isSatisfied(randReachable->state, &dist);
-        //   if (solved)
-        //   {
-        //   //approxdif = dist;
-        //   solution = randReachable;
-        //   break;
-        //   }
-        // }
-
-
-
-
+         addReachablitySet(nmotion);
 
         /* sample a random control that attempts to go towards the random state, and also sample a control duration */
         unsigned int cd = controlSampler_->sampleTo(rctrl, nmotion->control, nmotion->state, rmotion->state);

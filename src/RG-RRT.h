@@ -39,6 +39,7 @@
 
 #include "ompl/control/planners/PlannerIncludes.h"
 #include "ompl/datastructures/NearestNeighborsLinear.h"
+#include "ompl/control/spaces/RealVectorControlSpace.h"
 
 namespace ompl
 {
@@ -198,15 +199,32 @@ namespace ompl
             bool addIntermediateStates_{false};
 
             void addReachablitySet(Motion *motion){
+              // std::vector<base::State *> states;
+              // for (Control *c : reachableControls)
+              // {
+              //   ompl::base::State *result;
+              //   siC_->propagate(motion->state, c, motion->steps, result);
+              //   states.push_back(result);
+              //
+              // }
+              // motion->reachableSet = states;
+
+              ///////////////////////////////////
               std::vector<base::State *> states;
-              for (Control *c : reachableControls)
-              {
+              base::RealVectorBounds bounds = siC_->getControlSpace()->as<RealVectorControlSpace>()->getBounds();
+              std::vector<double> min = bounds.low;
+              std::vector<double> diff = bounds.getDifference();
+              std::vector<double> controlAsRealVect = min;
+              for (size_t i = 0; i < 10; i++) {
+                double approxStep = diff[0]/10;
+                Control *c = &controlAsRealVect[0];
                 ompl::base::State *result;
                 siC_->propagate(motion->state, c, motion->steps, result);
                 states.push_back(result);
-
+                double controlAsRealVect = controlAsRealVect + approxStep;
               }
               motion->reachableSet = states;
+
             }
 
             /** \brief The random number generator */
