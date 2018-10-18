@@ -43,7 +43,7 @@ ompl::control::RGRRT::RGRRT(const SpaceInformationPtr &si) : base::Planner(si, "
 {
     specs_.approximateSolutions = true;
     siC_ = si.get();
-
+    controlVector = makeControlVector();
 
     Planner::declareParam<double>("goal_bias", this, &RGRRT::setGoalBias, &RGRRT::getGoalBias, "0.:.05:1.");
     Planner::declareParam<bool>("intermediate_states", this, &RGRRT::setIntermediateStates, &RGRRT::getIntermediateStates);
@@ -104,7 +104,7 @@ ompl::base::PlannerStatus ompl::control::RGRRT::solve(const base::PlannerTermina
         auto *motion = new Motion(siC_);
         si_->copyState(motion->state, st);
         siC_->nullControl(motion->control);
-        addReachablitySet(motion);
+        addReachablitySet(motion, controlVector);
         nn_->add(motion);
     }
 
@@ -133,7 +133,7 @@ ompl::base::PlannerStatus ompl::control::RGRRT::solve(const base::PlannerTermina
     while (ptc == false)
     {
         Motion *nmotion = nullptr;
-        /* Sample a valid qNear and qrand */
+        /* Sample a valid qrand */
 
           while (nmotion == nullptr) {
             /* sample random state (with goal biasing) */
@@ -146,20 +146,18 @@ ompl::base::PlannerStatus ompl::control::RGRRT::solve(const base::PlannerTermina
             nmotion = nn_->nearest(rmotion);
 
           }
-         //addReachablitySet(nmotion);
 
         /* sample a random control that attempts to go towards the random state, and also sample a control duration */
-        unsigned int cd = controlSampler_->sampleTo(rctrl, nmotion->control, nmotion->state, rmotion->state);
+        controlSampler_->sampleTo(rctrl, nmotion->control, nmotion->state, rmotion->state);
 
-            if (cd >= siC_->getMinControlDuration())
-            {
+
                 /* create a motion */
                 auto *motion = new Motion(siC_);
                 si_->copyState(motion->state, rmotion->state);
                 siC_->copyControl(motion->control, rctrl);
-                motion->steps = cd;
+                motion->steps = 1;
                 motion->parent = nmotion;
-                addReachablitySet(motion);
+                addReachablitySet(motion, controlVector);
                 nn_->add(motion);
                 double dist = 0.0;
                 bool solv = goal->isSatisfied(motion->state, &dist);
@@ -174,7 +172,7 @@ ompl::base::PlannerStatus ompl::control::RGRRT::solve(const base::PlannerTermina
                     approxdif = dist;
                     approxsol = motion;
                 }
-            }
+
 
     }
 

@@ -163,11 +163,8 @@ namespace ompl
             /** \brief Free the memory allocated by this planner */
             void freeMemory();
 
-            // A container for the control efforts for the reachable set
-            std::vector<Control *> reachableControls;
-
             /** \brief Compute distance between motions (actually distance between contained states) */
-            double distanceFunction(const Motion *qrand, const Motion *qnear) const
+            double distanceFunction(const Motion *qnear, const Motion *qrand) const
             {
                 double d = si_->distance(qrand->state, qnear->state);
                 for (base::State *s : qnear->reachableSet) {
@@ -198,35 +195,58 @@ namespace ompl
             /** \brief Flag indicating whether intermediate states are added to the built tree of motions */
             bool addIntermediateStates_{false};
 
-            void addReachablitySet(Motion *motion){
-              // std::vector<base::State *> states;
-              // for (Control *c : reachableControls)
-              // {
-              //   ompl::base::State *result;
-              //   siC_->propagate(motion->state, c, motion->steps, result);
-              //   states.push_back(result);
-              //
-              // }
-              // motion->reachableSet = states;
+            std::vector<Control*> controlVector;
 
-              ///////////////////////////////////
-              std::vector<base::State *> states;
+            std::vector<Control *> makeControlVector()
+            {
               base::RealVectorBounds bounds = siC_->getControlSpace()->as<RealVectorControlSpace>()->getBounds();
               std::vector<double> min = bounds.low;
               double diff = bounds.getDifference().at(0);
               double controlAsRealVect = min.at(0);
               double approxStep = diff/10;
+              std::vector<Control *> controlVector;
 
-              for (size_t i = 0; i < 10; i++) {
-                Control *c = siC_->allocControl();
-                RealVectorControlSpace::ControlType *c_modify = c->as<RealVectorControlSpace::ControlType>();
-                c_modify->values[0] = controlAsRealVect;
+                for (size_t i = 0; i < 10; i++) {
+                  Control *c = siC_->allocControl();
+                  c->as<RealVectorControlSpace::ControlType>()->values[0] = controlAsRealVect;
+                  c->as<RealVectorControlSpace::ControlType>()->values[1] = 0;
+                  controlVector.push_back(c);
+                  controlAsRealVect = controlAsRealVect + approxStep;
+                }
+                return controlVector;
+            }
+
+            void addReachablitySet(Motion *motion, std::vector<Control *> controlVector){
+              std::vector<base::State *> states;
+              for (Control *c : controlVector)
+              {
                 ompl::base::State *result = siC_->allocState();
-                siC_->propagate(motion->state, c, 1, result);
+                siC_->propagate(motion->state, c, motion->steps, result);
                 states.push_back(result);
-                controlAsRealVect = controlAsRealVect + approxStep;
               }
               motion->reachableSet = states;
+
+              ///////////////////////////////////
+              // std::vector<base::State *> states;
+              // base::RealVectorBounds bounds = siC_->getControlSpace()->as<RealVectorControlSpace>()->getBounds();
+              // std::vector<double> min = bounds.low;
+              // double diff = bounds.getDifference().at(0);
+              // double controlAsRealVect = min.at(0);
+              //
+              // double approxStep = diff/10;
+              //
+              // for (size_t i = 0; i < 10; i++) {
+              //   Control *c = siC_->allocControl();
+              //
+              //   c->as<RealVectorControlSpace::ControlType>()->values[0] = controlAsRealVect;
+              //   c->as<RealVectorControlSpace::ControlType>()->values[1] = 0;
+              //
+              //   ompl::base::State *result = siC_->allocState();
+              //   siC_->propagate(motion->state, c, 1, result);
+              //   states.push_back(result);
+              //   controlAsRealVect = controlAsRealVect + approxStep;
+              // }
+              // motion->reachableSet = states;
 
             }
 

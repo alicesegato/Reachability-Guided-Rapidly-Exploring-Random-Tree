@@ -110,11 +110,13 @@ ompl::control::SimpleSetupPtr createPendulum(double torque)
     ss->setStatePropagator(ompl::control::ODESolver::getStatePropagator(odeSolver, &PendulumPostIntegration));
 
     //Start and Goal States
-    ompl::base::ScopedState<> start(space);
+    ompl::base::ScopedState<ompl::base::CompoundStateSpace> start(space);
+    start->as<ompl::base::SO2StateSpace::StateType>(0)->setIdentity();
     start[0] = -M_PI_2;
     start[1] = 0;
 
-    ompl::base::ScopedState<> goal(space);
+    ompl::base::ScopedState<ompl::base::CompoundStateSpace> goal(space);
+    goal->as<ompl::base::SO2StateSpace::StateType>(0)->setIdentity();
     goal[0] = M_PI_2;
     goal[1] = 0;
 
@@ -143,7 +145,7 @@ void planPendulum(ompl::control::SimpleSetupPtr &ss, int choice)
 
     }
     ss->setup();
-    ompl::base::PlannerStatus solved = ss->solve(30.0);
+    ompl::base::PlannerStatus solved = ss->solve(20.0);
 
     if (solved) {
       /*Print Path as geometric*/
