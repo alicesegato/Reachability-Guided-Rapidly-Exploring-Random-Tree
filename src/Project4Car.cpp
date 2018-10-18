@@ -5,6 +5,7 @@
 //////////////////////////////////////
 
 #include <iostream>
+#include <cmath>
 
 #include <ompl/base/ProjectionEvaluator.h>
 #include <ompl/base/spaces/SE2StateSpace.h>
@@ -49,21 +50,24 @@ void carODE(const ompl::control::ODESolver::StateType & q, const ompl::control::
 {
     // Retrieve control values.  Velocity is the first entry, steering angle is second.
     const double *u = control->as<ompl::control::RealVectorControlSpace::ControlType>()->values;
-    const double velocity = u[0];
-    const double steeringAngle = u[1];
+    const double angularVelocity = u[0];
+    const double forwardAcceleration = u[1];
 
-    // Retrieve the current orientation of the car.  The memory for ompl::base::SE2StateSpace is mapped as:
+    // Retrieve the current orientation of the car.
     // 0: x
     // 1: y
-    // 2: theta
-    const double theta = q[2];
+    // 2: heading
+    // 3: velocity
+    const double heading = q[2];
+    const double velocity = q[3];
 
     // Ensure qdot is the same size as q.  Zero out all values.
     qdot.resize(q.size(), 0);
 
-    qdot[0] = velocity * cos(theta);            // x-dot
-    qdot[1] = velocity * sin(theta);            // y-dot
-    qdot[2] = velocity * tan(steeringAngle);    // theta-dot
+    qdot[0] = velocity * cos(heading);            // x-dot
+    qdot[1] = velocity * sin(heading);            // y-dot
+    qdot[2] = angularVelocity;
+    qdot[3] = forwardAcceleration;
 }
 
 void makeStreet(std::vector<Rectangle> & obstacles)
@@ -84,12 +88,12 @@ void makeStreet(std::vector<Rectangle> & obstacles)
     obstacles.push_back(rect);
 }
 
-bool isValidStateCar(const ompl::control::SpaceInformation *si, const ompl::base::State *state)
+bool isValidStateCar(std::vector<Rectangle> &obstacles)
 {
-    const auto *se2state = state->as<ompl::base::SE2StateSpace::StateType>();
-    const auto *pos = se2state->as<ompl::base::RealVectorStateSpace::StateType>(0);
-    const auto *rot = se2state->as<ompl::base::SO2StateSpace::StateType>(1);
-    return si->satisfiesBounds(state) && (const void*)rot != (const void*)pos;
+//    const auto *se2state = state->as<ompl::base::SE2StateSpace::StateType>();
+//    const auto *pos = se2state->as<ompl::base::RealVectorStateSpace::StateType>(0);
+//    const auto *rot = se2state->as<ompl::base::SO2StateSpace::StateType>(1);
+//    return si->satisfiesBounds(state) && (const void*)rot != (const void*)pos;
 }
 
 
@@ -98,16 +102,27 @@ ompl::control::SimpleSetupPtr createCar(std::vector<Rectangle> & obstacles)
     // TODO: Create and setup the car's state space, control space, validity checker, everything you need for planning.
     // state space
     auto se2 = std::make_shared<ompl::base::SE2StateSpace>();
-    ompl::base::RealVectorBounds bounds(2);
-    bounds.setLow(0);
-    bounds.setHigh(10);
-    se2->setBounds(bounds);
+    // bounds for heading
+    ompl::base::RealVectorBounds se2bounds(3);
+    se2bounds.setLow(-10);
+    se2bounds.setHigh(10);
+    se2->setBounds(se2bounds);
+
+    auto r1 = std::make_shared<ompl::base::RealVectorStateSpace>(1);
+    ompl::base::RealVectorBounds r1bounds(1);
+    r1bounds.setLow(-5);
+    r1bounds.setHigh(5);
+    r1->setBounds(r1bounds);
+
+    ompl::base::StateSpacePtr space;
+    space = se2 + r1;
 
     // control space
-    auto cspace(std::make_shared<ompl::control::RealVectorControlSpace>(se2, 2));
+    auto cspace(std::make_shared<ompl::control::RealVectorControlSpace>(space, 2));
+    // bounds for forward acceleration
     ompl::base::RealVectorBounds cbounds(2);
-    bounds.setLow(-0.3);
-    bounds.setHigh(0.3);
+    cbounds.setLow(-5);
+    cbounds.setHigh(5);
     cspace->setBounds(cbounds);
 
     // Simple Setup
@@ -120,9 +135,10 @@ ompl::control::SimpleSetupPtr createCar(std::vector<Rectangle> & obstacles)
 //    ss->setStateValidityChecker(std::bind(isValidStateSquare, std::placeholders::_1, sideLength, obstacles));
 
     // start state
-    ompl::base::ScopedState<> start(se2);
+    ompl::base::ScopedState<> start(space);
+
     // goal state
-    ompl::base::ScopedState<> goal(se2);
+    ompl::base::ScopedState<> goal(space);
     ss->setStartAndGoalStates(start, goal);
 
     return ss;
