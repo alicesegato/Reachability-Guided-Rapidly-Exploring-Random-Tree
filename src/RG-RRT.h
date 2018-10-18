@@ -221,7 +221,7 @@ namespace ompl
               for (Control *c : controlVector)
               {
                 ompl::base::State *result = siC_->allocState();
-                siC_->propagate(motion->state, c, motion->steps, result);
+                siC_->propagate(motion->state, c, 1, result);
                 states.push_back(result);
               }
               motion->reachableSet = states;

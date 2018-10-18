@@ -148,31 +148,34 @@ ompl::base::PlannerStatus ompl::control::RGRRT::solve(const base::PlannerTermina
           }
 
         /* sample a random control that attempts to go towards the random state, and also sample a control duration */
-        controlSampler_->sampleTo(rctrl, nmotion->control, nmotion->state, rmotion->state);
+        unsigned int cd = controlSampler_->sampleTo(rctrl, nmotion->control, nmotion->state, rmotion->state);
 
 
-                /* create a motion */
-                auto *motion = new Motion(siC_);
-                si_->copyState(motion->state, rmotion->state);
-                siC_->copyControl(motion->control, rctrl);
-                motion->steps = 1;
-                motion->parent = nmotion;
-                addReachablitySet(motion, controlVector);
-                nn_->add(motion);
-                double dist = 0.0;
-                bool solv = goal->isSatisfied(motion->state, &dist);
-                if (solv)
-                {
-                    approxdif = dist;
-                    solution = motion;
-                    break;
-                }
-                if (dist < approxdif)
-                {
-                    approxdif = dist;
-                    approxsol = motion;
-                }
+        if (cd >= siC_->getMinControlDuration())
+        {
+          /* create a motion */
+          auto *motion = new Motion(siC_);
+          si_->copyState(motion->state, rmotion->state);
+          siC_->copyControl(motion->control, rctrl);
+          motion->steps = 1;
+          motion->parent = nmotion;
+          addReachablitySet(motion, controlVector);
+          nn_->add(motion);
+          double dist = 0.0;
+          bool solv = goal->isSatisfied(motion->state, &dist);
+          if (solv)
+          {
+              approxdif = dist;
+              solution = motion;
+              break;
+          }
+          if (dist < approxdif)
+          {
+              approxdif = dist;
+              approxsol = motion;
+          }
 
+        }
 
     }
 

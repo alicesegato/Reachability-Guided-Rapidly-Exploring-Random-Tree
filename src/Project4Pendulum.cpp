@@ -150,15 +150,17 @@ void planPendulum(ompl::control::SimpleSetupPtr &ss, int choice)
     if (solved) {
       /*Print Path as geometric*/
       // ss->simplifySolution();
-      //ompl::control::PathControl &path = ss->getSolutionPath();
-      ompl::geometric::PathGeometric path = ss->getSolutionPath().asGeometric();
-      path.interpolate(50);
-      path.printAsMatrix(std::cout);
+
+      ompl::control::PathControl &controlPath = ss->getSolutionPath();
+      controlPath.interpolate();
+      ompl::geometric::PathGeometric geometricPath = controlPath.asGeometric();
+      geometricPath.interpolate();
+      geometricPath.printAsMatrix(std::cout);
 
       // print path to file
       std::ofstream fout("path.txt");
       fout << "R2" << std::endl;
-      path.printAsMatrix(fout);
+      geometricPath.printAsMatrix(fout);
       fout.close();
     }
 }
