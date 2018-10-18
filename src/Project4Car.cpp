@@ -14,6 +14,7 @@
 #include <ompl/control/spaces/RealVectorControlSpace.h>
 #include <ompl/control/planners/rrt/RRT.h>
 #include <ompl/control/planners/kpiece/KPIECE1.h>
+#include <fstream>
 
 #include <ompl/tools/benchmark/Benchmark.h>
 
@@ -83,6 +84,15 @@ void makeStreet(std::vector<Rectangle> & obstacles)
     obstacles.push_back(rect);
 }
 
+bool isValidStateCar(const ompl::control::SpaceInformation *si, const ompl::base::State *state)
+{
+    const auto *se2state = state->as<ompl::base::SE2StateSpace::StateType>();
+    const auto *pos = se2state->as<ompl::base::RealVectorStateSpace::StateType>(0);
+    const auto *rot = se2state->as<ompl::base::SO2StateSpace::StateType>(1);
+    return si->satisfiesBounds(state) && (const void*)rot != (const void*)pos;
+}
+
+
 ompl::control::SimpleSetupPtr createCar(std::vector<Rectangle> & obstacles)
 {
     // TODO: Create and setup the car's state space, control space, validity checker, everything you need for planning.
@@ -135,6 +145,24 @@ void planCar(ompl::control::SimpleSetupPtr & ss, int choice)
     else if (choice == 3)
     {
         //RG-RRT
+        //ss->setPlanner(std::make_shared<ompl::control::RGRRT>(ss->getSpaceInformation()));
+    }
+    ss->setup();
+    ompl::base::PlannerStatus solved = ss->solve(30.0);
+
+    if (solved) {
+        /*Print Path as geometric*/
+        // ss->simplifySolution();
+        //ompl::control::PathControl &path = ss->getSolutionPath();
+        ompl::geometric::PathGeometric path = ss->getSolutionPath().asGeometric();
+        path.interpolate(50);
+        path.printAsMatrix(std::cout);
+
+        // print path to file
+        std::ofstream fout("path.txt");
+        fout << "R2" << std::endl;
+        path.printAsMatrix(fout);
+        fout.close();
     }
 }
 
