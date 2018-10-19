@@ -225,29 +225,6 @@ namespace ompl
                 states.push_back(result);
               }
               motion->reachableSet = states;
-
-              ///////////////////////////////////
-              // std::vector<base::State *> states;
-              // base::RealVectorBounds bounds = siC_->getControlSpace()->as<RealVectorControlSpace>()->getBounds();
-              // std::vector<double> min = bounds.low;
-              // double diff = bounds.getDifference().at(0);
-              // double controlAsRealVect = min.at(0);
-              //
-              // double approxStep = diff/10;
-              //
-              // for (size_t i = 0; i < 10; i++) {
-              //   Control *c = siC_->allocControl();
-              //
-              //   c->as<RealVectorControlSpace::ControlType>()->values[0] = controlAsRealVect;
-              //   c->as<RealVectorControlSpace::ControlType>()->values[1] = 0;
-              //
-              //   ompl::base::State *result = siC_->allocState();
-              //   siC_->propagate(motion->state, c, 1, result);
-              //   states.push_back(result);
-              //   controlAsRealVect = controlAsRealVect + approxStep;
-              // }
-              // motion->reachableSet = states;
-
             }
 
             /** \brief The random number generator */

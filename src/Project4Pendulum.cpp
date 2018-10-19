@@ -82,7 +82,9 @@ ompl::control::SimpleSetupPtr createPendulum(double torque)
 
     // State Space
     auto theta(std::make_shared<ompl::base::SO2StateSpace>());
+
     auto omega(std::make_shared<ompl::base::RealVectorStateSpace>(1));
+
     ompl::base::RealVectorBounds wbounds(1);
     wbounds.setLow(-10);
     wbounds.setHigh(10);
@@ -110,17 +112,15 @@ ompl::control::SimpleSetupPtr createPendulum(double torque)
     ss->setStatePropagator(ompl::control::ODESolver::getStatePropagator(odeSolver, &PendulumPostIntegration));
 
     //Start and Goal States
-    ompl::base::ScopedState<ompl::base::CompoundStateSpace> start(space);
-    start->as<ompl::base::SO2StateSpace::StateType>(0)->setIdentity();
+    ompl::base::ScopedState<> start(space);
     start[0] = -M_PI_2;
     start[1] = 0;
 
-    ompl::base::ScopedState<ompl::base::CompoundStateSpace> goal(space);
-    goal->as<ompl::base::SO2StateSpace::StateType>(0)->setIdentity();
+    ompl::base::ScopedState<> goal(space);
     goal[0] = M_PI_2;
     goal[1] = 0;
 
-    ss->setStartAndGoalStates(start, goal);
+    ss->setStartAndGoalStates(start, goal, 0.05);
 
 
     return ss;
@@ -145,7 +145,7 @@ void planPendulum(ompl::control::SimpleSetupPtr &ss, int choice)
 
     }
     ss->setup();
-    ompl::base::PlannerStatus solved = ss->solve(20.0);
+    ompl::base::PlannerStatus solved = ss->solve(60.0);
 
     if (solved) {
       /*Print Path as geometric*/
