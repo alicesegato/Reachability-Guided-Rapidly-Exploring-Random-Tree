@@ -157,7 +157,7 @@ ompl::base::PlannerStatus ompl::control::RGRRT::solve(const base::PlannerTermina
           auto *motion = new Motion(siC_);
           si_->copyState(motion->state, rmotion->state);
           siC_->copyControl(motion->control, rctrl);
-          motion->steps = 1;
+          motion->steps = cd;
           motion->parent = nmotion;
           addReachablitySet(motion, controlVector);
           nn_->add(motion);
