@@ -40,6 +40,9 @@ public:
     void project(const ompl::base::State * /*state*/ , Eigen::Ref<Eigen::VectorXd> /*projection*/) const override
     {
         // TODO: Your projection for the pendulum
+        // ompl::base::CompoundState *space = state->as<ompl::base::CompoundState>();
+        // ompl::base::SO2StateSpace::StateType *theta = space->as<ompl::base::SO2StateSpace::StateType>(0);
+        // projection(0) = theta->value;
     }
 };
 
@@ -132,6 +135,7 @@ void planPendulum(ompl::control::SimpleSetupPtr &ss, int choice)
     // choice is what planner to use.
     if (choice == 1) {
       /* RRT */
+      ss->getSpaceInformation()->setPropagationStepSize(0.05);
       auto planner = std::make_shared<ompl::control::RRT>(ss->getSpaceInformation());
       ss->setPlanner(planner);
     } else if (choice == 2) {
@@ -139,13 +143,13 @@ void planPendulum(ompl::control::SimpleSetupPtr &ss, int choice)
 
     } else if (choice == 3) {
       /* RG_RRT */
-      // set Planner
+      ss->getSpaceInformation()->setPropagationStepSize(0.05);
       auto planner = std::make_shared<ompl::control::RGRRT>(ss->getSpaceInformation());
       ss->setPlanner(planner);
 
     }
     ss->setup();
-    ompl::base::PlannerStatus solved = ss->solve(60.0);
+    ompl::base::PlannerStatus solved = ss->solve(40.0);
 
     if (solved) {
       /*Print Path as geometric*/
