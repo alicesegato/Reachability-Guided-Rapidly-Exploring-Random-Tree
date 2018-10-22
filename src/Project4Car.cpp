@@ -36,12 +36,18 @@ public:
     unsigned int getDimension() const override
     {
         // TODO: The dimension of your projection for the car
-        return 0;
+        return 2;
     }
 
-    void project(const ompl::base::State * /* state */, Eigen::Ref<Eigen::VectorXd> /* projection */) const override
+    void project(const ompl::base::State *  state, Eigen::Ref<Eigen::VectorXd> projection) const override
     {
         // TODO: Your projection for the car
+        auto compoundState = state->as<ompl::base::CompoundStateSpace::StateType>();
+        auto se2 = compoundState->as<ompl::base::SE2StateSpace::StateType>(0);
+        auto r2 = se2->as<ompl::base::RealVectorStateSpace::StateType>(0);
+        projection[0] = r2->values[0];
+        projection[1] = r2->values[1];
+
     }
 };
 
@@ -75,49 +81,73 @@ void makeStreet(std::vector<Rectangle> & obstacles)
     // TODO: Fill in the vector of rectangles with your street environment.
     Rectangle rect;
 
+    rect.x = 0.0;
+    rect.y = 8.0;
+    rect.width = 8.0;
+    rect.height = 2.0;
+    obstacles.push_back(rect);
+
+    rect.x = 2.0;
+    rect.y = 4.0;
+    rect.width = 8.0;
+    rect.height = 2.0;
+    obstacles.push_back(rect);
+
     rect.x = 3.0;
-    rect.y = 3.0;
-    rect.width = 2.0;
-    rect.height - 5.0;
-    obstacles.push_back(rect);
-
-    rect.x = 7.0;
-    rect.y = 7.0;
-    rect.width = 1.0;
-    rect.height = 1.0;
+    rect.y = 2.0;
+    rect.width = 3.0;
+    rect.height = 2.0;
     obstacles.push_back(rect);
 }
 
-bool isValidStateCar(std::vector<Rectangle> &obstacles)
+bool isValidStateCar(ompl::control::SpaceInformation* si, const ompl::base::State *state, const std::vector<Rectangle> &obstacles)
 {
-//    const auto *se2state = state->as<ompl::base::SE2StateSpace::StateType>();
-//    const auto *pos = se2state->as<ompl::base::RealVectorStateSpace::StateType>(0);
-//    const auto *rot = se2state->as<ompl::base::SO2StateSpace::StateType>(1);
-//    return si->satisfiesBounds(state) && (const void*)rot != (const void*)pos;
+    // check for collisions in the state space
+    auto compoundState = state->as<ompl::base::CompoundStateSpace::StateType>();
+    auto se2 = compoundState->as<ompl::base::SE2StateSpace::StateType>(0);
+    auto r2 = se2->as<ompl::base::RealVectorStateSpace::StateType>(0);
+    double x = r2->values[0];
+    double y = r2->values[1];
+
+//    std::cout << "(x, y): (" << x << " ," << y << ")" << std::endl;
+//    std::cout << "1: (" << obstacles.at(0).x << ", " << obstacles.at(0).y << ")" << std::endl;
+//    std::cout << "2: (" << obstacles.at(1).x << ", " << obstacles.at(1).y << ")" << std::endl;
+
+    return isValidPoint(x, y, obstacles) && si->satisfiesBounds(state);
 }
 
+void carPostIntegration(const ompl::base::State* /*state*/, const ompl::control::Control * /*control*/, const double /*duration*/, ompl::base::State *result)
+{
+    ompl::base::SO2StateSpace SO2;
+    SO2.enforceBounds(result->as<ompl::base::CompoundState>()->as<ompl::base::SO2StateSpace::StateType>(0));
+}
 
 ompl::control::SimpleSetupPtr createCar(std::vector<Rectangle> & obstacles)
 {
     // TODO: Create and setup the car's state space, control space, validity checker, everything you need for planning.
-    // state space
+    // state space (x, y, heading)
     auto se2 = std::make_shared<ompl::base::SE2StateSpace>();
     // bounds for heading
-    ompl::base::RealVectorBounds se2bounds(3);
-    se2bounds.setLow(-10);
+    ompl::base::RealVectorBounds se2bounds(2);
+    se2bounds.setLow(0);
     se2bounds.setHigh(10);
     se2->setBounds(se2bounds);
 
+    // (forward velocity)
     auto r1 = std::make_shared<ompl::base::RealVectorStateSpace>(1);
     ompl::base::RealVectorBounds r1bounds(1);
     r1bounds.setLow(-5);
     r1bounds.setHigh(5);
     r1->setBounds(r1bounds);
 
+    // (x, y, heading, forward velocity)
     ompl::base::StateSpacePtr space;
     space = se2 + r1;
 
-    // control space
+    // make obstacles
+    makeStreet(obstacles);
+
+    // control space (angular velocity, forward acceleration)
     auto cspace(std::make_shared<ompl::control::RealVectorControlSpace>(space, 2));
     // bounds for forward acceleration
     ompl::base::RealVectorBounds cbounds(2);
@@ -129,16 +159,34 @@ ompl::control::SimpleSetupPtr createCar(std::vector<Rectangle> & obstacles)
     ompl::control::SimpleSetupPtr ss(new ompl::control::SimpleSetup(cspace));
 
     // Propagation
-//    ss->setStatePropagator(propagate);
+    auto odeSolver(std::make_shared<ompl::control::ODEBasicSolver<>>(ss->getSpaceInformation(), &carODE));
+    ss->setStatePropagator(ompl::control::ODESolver::getStatePropagator(odeSolver, &carPostIntegration));
+    //ss->setStatePropagator(ompl::control::ODESolver::getStatePropagator(odeSolver));
 
     // Validity checker
-//    ss->setStateValidityChecker(std::bind(isValidStateSquare, std::placeholders::_1, sideLength, obstacles));
+    auto si = ss->getSpaceInformation().get();
+    //auto si(std::make_shared<ompl::base::SpaceInformation>(space));
+    ss->setStateValidityChecker([obstacles, si](const ompl::base::State *state) {
+        return isValidStateCar(si, state, obstacles);
+    });
+
+    //ss->setStateValidityChecker(std::bind(isValidStateCar, ss->getSpaceInformation(), std::placeholders::_1, obstacles));
 
     // start state
     ompl::base::ScopedState<> start(space);
+    start[0] = 9;
+    start[1] = 3;
+    start[2] = M_PI_4;
+    start[3] = 3;
+
 
     // goal state
     ompl::base::ScopedState<> goal(space);
+    goal[0] = 10;
+    goal[1] = 10;
+    goal[2] = M_PI_4;
+    goal[3] = 3;
+
     ss->setStartAndGoalStates(start, goal);
 
     return ss;
@@ -151,6 +199,7 @@ void planCar(ompl::control::SimpleSetupPtr & ss, int choice)
     if (choice == 1)
     {
         //RRT
+        ss->getSpaceInformation()->setPropagationStepSize(0.05);
         ss->setPlanner(std::make_shared<ompl::control::RRT>(ss->getSpaceInformation()));
     }
     else if (choice == 2)
@@ -164,7 +213,7 @@ void planCar(ompl::control::SimpleSetupPtr & ss, int choice)
         //ss->setPlanner(std::make_shared<ompl::control::RGRRT>(ss->getSpaceInformation()));
     }
     ss->setup();
-    ompl::base::PlannerStatus solved = ss->solve(30.0);
+    ompl::base::PlannerStatus solved = ss->solve(10.0);
 
     if (solved) {
         /*Print Path as geometric*/
@@ -238,3 +287,12 @@ int main(int /* argc */, char ** /* argv */)
 
     return 0;
 }
+
+/*
+ * 1. Is the state space and control space good?
+ * 2. What are reasonable bounds to set? Why does setting bounds give me an error of dimensionality? Where to enforce bounds?
+ * 3. Do I need to check control bounds or just state space bounds in the isValidState? Or just collision?
+ * 4. Post integration procedures?
+ * 5. ODEs correct?
+ * 6. Projections?
+ */
