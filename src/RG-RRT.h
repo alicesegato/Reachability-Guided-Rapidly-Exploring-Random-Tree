@@ -222,7 +222,9 @@ namespace ompl
               {
                 ompl::base::State *result = siC_->allocState();
                 siC_->propagate(motion->state, c, 1, result);
-                states.push_back(result);
+                if (si_->isValid(result)) {
+                  states.push_back(result);
+                }
               }
               motion->reachableSet = states;
             }
