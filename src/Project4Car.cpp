@@ -29,7 +29,7 @@
 class CarProjection : public ompl::base::ProjectionEvaluator
 {
 public:
-    CarProjection(const ompl::base::StateSpace *space) : ProjectionEvaluator(space)
+    CarProjection(const ompl::base::StateSpacePtr &space) : ProjectionEvaluator(space)
     {
     }
 
@@ -144,6 +144,8 @@ ompl::control::SimpleSetupPtr createCar(std::vector<Rectangle> & obstacles)
     ompl::base::StateSpacePtr space;
     space = se2 + r1;
 
+    space->registerDefaultProjection(ompl::base::ProjectionEvaluatorPtr(new CarProjection(space)));
+
     // make obstacles
     makeStreet(obstacles);
 
@@ -205,12 +207,14 @@ void planCar(ompl::control::SimpleSetupPtr & ss, int choice)
     else if (choice == 2)
     {
         //KPIECE1
+        ss->getSpaceInformation()->setPropagationStepSize(0.05);
         ss->setPlanner(std::make_shared<ompl::control::KPIECE1>(ss->getSpaceInformation()));
     }
     else if (choice == 3)
     {
         //RG-RRT
-        //ss->setPlanner(std::make_shared<ompl::control::RGRRT>(ss->getSpaceInformation()));
+        ss->getSpaceInformation()->setPropagationStepSize(0.05);
+        ss->setPlanner(std::make_shared<ompl::control::RGRRT>(ss->getSpaceInformation()));
     }
     ss->setup();
     ompl::base::PlannerStatus solved = ss->solve(10.0);
@@ -219,14 +223,17 @@ void planCar(ompl::control::SimpleSetupPtr & ss, int choice)
         /*Print Path as geometric*/
         // ss->simplifySolution();
         //ompl::control::PathControl &path = ss->getSolutionPath();
-        ompl::geometric::PathGeometric path = ss->getSolutionPath().asGeometric();
-        path.interpolate(50);
-        path.printAsMatrix(std::cout);
+
+        ompl::control::PathControl &controlPath = ss->getSolutionPath();
+        controlPath.interpolate();
+        ompl::geometric::PathGeometric geometricPath = controlPath.asGeometric();
+        geometricPath.interpolate();
+        geometricPath.printAsMatrix(std::cout);
 
         // print path to file
         std::ofstream fout("path.txt");
         fout << "R2" << std::endl;
-        path.printAsMatrix(fout);
+        geometricPath.printAsMatrix(fout);
         fout.close();
     }
 }
