@@ -13,6 +13,8 @@
 #include <ompl/base/ProjectionEvaluator.h>
 #include <ompl/control/SimpleSetup.h>
 #include <ompl/control/ODESolver.h>
+#include "ompl/tools/benchmark/Benchmark.h"
+
 
 #include <ompl/control/spaces/RealVectorControlSpace.h>
 #include <ompl/base/spaces/RealVectorStateSpace.h>
@@ -21,28 +23,34 @@
 // Your implementation of RG-RRT
 #include "RG-RRT.h"
 #include "ompl/control/planners/rrt/RRT.h"
+#include "ompl/control/planners/kpiece/KPIECE1.h"
+
 
 // Your projection for the pendulum
+
 class PendulumProjection : public ompl::base::ProjectionEvaluator
 {
 public:
-    PendulumProjection(const ompl::base::StateSpace *space) : ProjectionEvaluator(space)
+    PendulumProjection(const ompl::base::StateSpacePtr &space) : ProjectionEvaluator(space)
     {
     }
 
     unsigned int getDimension() const override
     {
         // TODO: The dimension of your projection for the pendulum
-        unsigned int dim = 2;
+        unsigned int dim = 1;
         return dim;
     }
 
-    void project(const ompl::base::State * /*state*/ , Eigen::Ref<Eigen::VectorXd> /*projection*/) const override
+    void project(const ompl::base::State * state, Eigen::Ref<Eigen::VectorXd> projection) const override
     {
         // TODO: Your projection for the pendulum
-        // ompl::base::CompoundState *space = state->as<ompl::base::CompoundState>();
-        // ompl::base::SO2StateSpace::StateType *theta = space->as<ompl::base::SO2StateSpace::StateType>(0);
-        // projection(0) = theta->value;
+         auto compoundState = state->as<ompl::base::CompoundState>();
+         auto omega = compoundState->as<ompl::base::RealVectorStateSpace::StateType>(1);
+         auto theta = compoundState->as<ompl::base::SO2StateSpace::StateType>(0);
+
+         projection(0) = pow(omega->values[0],2);
+
     }
 };
 
@@ -50,7 +58,7 @@ bool isValidStatePendulum(const ompl::base::State *state)
 {
       const ompl::base::CompoundState *space = state->as<ompl::base::CompoundState>();
 
-      const ompl::base::SO2StateSpace::StateType *theta = space->as<ompl::base::SO2StateSpace::StateType>(0);
+      //const ompl::base::SO2StateSpace::StateType *theta = space->as<ompl::base::SO2StateSpace::StateType>(0);
       const ompl::base::RealVectorStateSpace::StateType *omega = space->as<ompl::base::RealVectorStateSpace::StateType>(1);
 
       if (omega->values[0]<-10 or omega->values[0]>10) {
@@ -96,6 +104,8 @@ ompl::control::SimpleSetupPtr createPendulum(double torque)
     ompl::base::StateSpacePtr space;
     space = theta + omega;
 
+    space->registerDefaultProjection(ompl::base::ProjectionEvaluatorPtr(new PendulumProjection(space)));
+
     // Control Space
     ompl::control::ControlSpacePtr cSpace(new ompl::control::RealVectorControlSpace(space, 1));
 
@@ -138,8 +148,14 @@ void planPendulum(ompl::control::SimpleSetupPtr &ss, int choice)
       ss->getSpaceInformation()->setPropagationStepSize(0.05);
       auto planner = std::make_shared<ompl::control::RRT>(ss->getSpaceInformation());
       ss->setPlanner(planner);
+
     } else if (choice == 2) {
       /* KPIECE1 */
+      ss->getSpaceInformation()->setPropagationStepSize(0.05);
+      auto planner = std::make_shared<ompl::control::KPIECE1>(ss->getSpaceInformation());
+      // space->registerDefaultProjection(ompl::base::ProjectionEvaluatorPtr(new PendulumProjection(space)));
+      ss->setPlanner(planner);
+
 
     } else if (choice == 3) {
       /* RG_RRT */
@@ -172,6 +188,21 @@ void planPendulum(ompl::control::SimpleSetupPtr &ss, int choice)
 void benchmarkPendulum(ompl::control::SimpleSetupPtr &ss)
 {
     // TODO: Do some benchmarking for the pendulum
+    ss->setup();
+    ss->print();
+    ompl::tools::Benchmark b(*ss, "Pendulum Benchmarking");
+    b.addPlanner(ompl::base::PlannerPtr(new ompl::control::RRT(ss->getSpaceInformation())));
+    b.addPlanner(ompl::base::PlannerPtr(new ompl::control::KPIECE1(ss->getSpaceInformation())));
+    b.addPlanner(ompl::base::PlannerPtr(new ompl::control::RGRRT(ss->getSpaceInformation())));
+
+    ompl::tools::Benchmark::Request req;
+    req.maxTime = 60;
+    req.maxMem = 1000;
+    req.runCount = 50;
+    req.displayProgress = true;
+    b.benchmark(req);
+
+    b.saveResultsToFile();
 }
 
 int main(int /* argc */, char ** /* argv */)
