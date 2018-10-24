@@ -47,10 +47,8 @@ public:
         // TODO: Your projection for the pendulum
          auto compoundState = state->as<ompl::base::CompoundState>();
          auto omega = compoundState->as<ompl::base::RealVectorStateSpace::StateType>(1);
-         auto theta = compoundState->as<ompl::base::SO2StateSpace::StateType>(0);
-
-         projection(0) = pow(omega->values[0],2);
-
+         
+         projection[0] = 0.5*pow(omega->values[0],2);
     }
 };
 
