@@ -109,7 +109,7 @@ bool isValidStateCar(ompl::control::SpaceInformation* si, const ompl::base::Stat
     double x = r2->values[0];
     double y = r2->values[1];
     double angle = r2->values[3];
-    
+
 //    std::cout << "(x, y): (" << x << " ," << y << ")" << std::endl;
 //    std::cout << "1: (" << obstacles.at(0).x << ", " << obstacles.at(0).y << ")" << std::endl;
 //    std::cout << "2: (" << obstacles.at(1).x << ", " << obstacles.at(1).y << ")" << std::endl;
@@ -252,9 +252,9 @@ void benchmarkCar(ompl::control::SimpleSetupPtr & ss)
     b.addPlanner(ompl::base::PlannerPtr(new ompl::control::RGRRT(ss->getSpaceInformation())));
 
     ompl::tools::Benchmark::Request req;
-    req.maxTime = 60;
+    req.maxTime = 30;
     req.maxMem = 1000;
-    req.runCount = 50;
+    req.runCount = 30;
     req.displayProgress = true;
     b.benchmark(req);
 

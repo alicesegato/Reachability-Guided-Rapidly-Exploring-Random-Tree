@@ -47,7 +47,7 @@ public:
         // TODO: Your projection for the pendulum
          auto compoundState = state->as<ompl::base::CompoundState>();
          auto omega = compoundState->as<ompl::base::RealVectorStateSpace::StateType>(1);
-         
+
          projection[0] = 0.5*pow(omega->values[0],2);
     }
 };
@@ -194,9 +194,9 @@ void benchmarkPendulum(ompl::control::SimpleSetupPtr &ss)
     b.addPlanner(ompl::base::PlannerPtr(new ompl::control::RGRRT(ss->getSpaceInformation())));
 
     ompl::tools::Benchmark::Request req;
-    req.maxTime = 60;
+    req.maxTime = 30;
     req.maxMem = 1000;
-    req.runCount = 50;
+    req.runCount = 30;
     req.displayProgress = true;
     b.benchmark(req);
 
