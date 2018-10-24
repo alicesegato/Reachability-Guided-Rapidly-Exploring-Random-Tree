@@ -190,7 +190,7 @@ ompl::control::SimpleSetupPtr createCar(std::vector<Rectangle> & obstacles)
     goal[2] = M_PI_4;
     goal[3] = 6;
 
-    ss->setStartAndGoalStates(start, goal);
+    ss->setStartAndGoalStates(start, goal, 0.05);
 
     return ss;
 }
@@ -252,9 +252,9 @@ void benchmarkCar(ompl::control::SimpleSetupPtr & ss)
     b.addPlanner(ompl::base::PlannerPtr(new ompl::control::RGRRT(ss->getSpaceInformation())));
 
     ompl::tools::Benchmark::Request req;
-    req.maxTime = 60;
+    req.maxTime = 30;
     req.maxMem = 1000;
-    req.runCount = 50;
+    req.runCount = 30;
     req.displayProgress = true;
     b.benchmark(req);
 
