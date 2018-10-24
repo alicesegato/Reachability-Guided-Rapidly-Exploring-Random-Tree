@@ -190,7 +190,7 @@ ompl::control::SimpleSetupPtr createCar(std::vector<Rectangle> & obstacles)
     goal[2] = M_PI_4;
     goal[3] = 6;
 
-    ss->setStartAndGoalStates(start, goal);
+    ss->setStartAndGoalStates(start, goal, 0.05);
 
     return ss;
 }
