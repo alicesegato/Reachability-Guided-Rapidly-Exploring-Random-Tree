@@ -108,12 +108,13 @@ bool isValidStateCar(ompl::control::SpaceInformation* si, const ompl::base::Stat
     auto r2 = se2->as<ompl::base::RealVectorStateSpace::StateType>(0);
     double x = r2->values[0];
     double y = r2->values[1];
-
+    double angle = r2->values[3];
+    
 //    std::cout << "(x, y): (" << x << " ," << y << ")" << std::endl;
 //    std::cout << "1: (" << obstacles.at(0).x << ", " << obstacles.at(0).y << ")" << std::endl;
 //    std::cout << "2: (" << obstacles.at(1).x << ", " << obstacles.at(1).y << ")" << std::endl;
 
-    return isValidPoint(x, y, obstacles) && si->satisfiesBounds(state);
+    return isValidSquare(x, y, angle, 0.3, obstacles) && si->satisfiesBounds(state);
 }
 
 void carPostIntegration(const ompl::base::State* /*state*/, const ompl::control::Control * /*control*/, const double /*duration*/, ompl::base::State *result)
@@ -184,10 +185,10 @@ ompl::control::SimpleSetupPtr createCar(std::vector<Rectangle> & obstacles)
 
     // goal state
     ompl::base::ScopedState<> goal(space);
-    goal[0] = 10;
-    goal[1] = 10;
+    goal[0] = 9;
+    goal[1] = 9;
     goal[2] = M_PI_4;
-    goal[3] = 3;
+    goal[3] = 6;
 
     ss->setStartAndGoalStates(start, goal);
 
@@ -232,7 +233,7 @@ void planCar(ompl::control::SimpleSetupPtr & ss, int choice)
 
         // print path to file
         std::ofstream fout("path.txt");
-        fout << "R2" << std::endl;
+        fout << "SE2" << std::endl;
         geometricPath.printAsMatrix(fout);
         fout.close();
     }
@@ -243,13 +244,21 @@ void benchmarkCar(ompl::control::SimpleSetupPtr & ss)
     // TODO: Do some benchmarking for the car
     ompl::tools::Benchmark::Request request(100., 10000., 10);  // runtime (s), memory (MB), run count
 
-//    ss->setup();
-//
-//    ompl::tools::Benchmark b(ss, ss.getName());
-//    b.addPlanner(std::make_shared<ompl::control::RRT>(ss->getSpaceInformation()));
-//    b.addPlanner(std::make_shared<ompl::control::KPIECE1>(ss->getSpaceInformation()));
-//    b.benchmark(request);
-//    b.saveResultsToFile();
+    ss->setup();
+    ss->print();
+    ompl::tools::Benchmark b(*ss, "Car Benchmarking");
+    b.addPlanner(ompl::base::PlannerPtr(new ompl::control::RRT(ss->getSpaceInformation())));
+    b.addPlanner(ompl::base::PlannerPtr(new ompl::control::KPIECE1(ss->getSpaceInformation())));
+    b.addPlanner(ompl::base::PlannerPtr(new ompl::control::RGRRT(ss->getSpaceInformation())));
+
+    ompl::tools::Benchmark::Request req;
+    req.maxTime = 60;
+    req.maxMem = 1000;
+    req.runCount = 50;
+    req.displayProgress = true;
+    b.benchmark(req);
+
+    b.saveResultsToFile();
 }
 
 int main(int /* argc */, char ** /* argv */)
