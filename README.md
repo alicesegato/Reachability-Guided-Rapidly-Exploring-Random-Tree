@@ -1,12 +1,14 @@
 # RG-RRT
+
 ## Introduction
+
 
 ## Cloning the Repository and Installing Dependencies
 
 ## File Structure
 ```
 .
-|-- Makefile                    # A primitive makefile containing build instructions.
+|-- Makefile                    # A primitive makefile containing build instructions
 |-- README                      # Repository Manual
 |-- plotSolutionCar.py          # Python script to visualize solution for car
 |-- plotSolutionPendulum.py     # Python script to visualize soluction for pendulum
@@ -19,3 +21,6 @@
     `-- "RG-RRT.h"              # Header file 
 
 ```
+## Usage
+
+
