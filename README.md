@@ -1,9 +1,9 @@
 # RG-RRT
 
 ## Introduction
-This project plans motions for non-holonomic systems whose dynamics are described by an ordinary differential equation of the form ̇q=f(q,u),where q is a vector describing the current state of the system and uis a vector of control inputs to the system.  The systems planned for are a torque-controlled pendulum and a car-like vehicle moving in a street environment. Dynamically feasible and collision-free motions for these systems are computed using the RRT and KPIECE planners that are already implemented in OMPL. Additionally, a new planner called **Reachability-Guided RRT (RG-RRT)**, one of many variants of RRT, is implemented.
+This project plans motions for non-holonomic systems whose dynamics are described by an ordinary differential equation of the form ̇q=f(q,u),where q is a vector describing the current state of the system and u is a vector of control inputs to the system.  The systems planned for are a torque-controlled pendulum and a car-like vehicle moving in a street environment. Dynamically feasible and collision-free motions for these systems are computed using the RRT and KPIECE planners that are already implemented in OMPL. Additionally, a new planner called **Reachability-Guided RRT (RG-RRT)**, one of many variants of RRT, is implemented.
 
-An article by Shkolnik et al. (2009) proposes a motion planning algorithm for dynamic systems. The authors propose that an RRTshould only be grown towards a random state that is likely to be reachablefrom itsnearest neighbor in the tree.  For dynamic systems, states that are near a given state are not always easilyreachable. This is the fundamental principle behind RG-RRT. The paper can be accessed at [RG-RRT, Shkolnik at al.](https://ieeexplore.ieee.org/document/5152874).
+An article by Shkolnik et al. (2009) proposes a motion planning algorithm for dynamic systems. The authors propose that an RRT should only be grown towards a random state that is likely to be reachable from its nearest neighbor in the tree.  For dynamic systems, states that are near a given state are not always easily reachable. This is the fundamental principle behind RG-RRT. The paper can be accessed at [RG-RRT, Shkolnik at al.](https://ieeexplore.ieee.org/document/5152874).
 
 ## Cloning the Repository and Installing Dependencies
 To clone this repository through https:
