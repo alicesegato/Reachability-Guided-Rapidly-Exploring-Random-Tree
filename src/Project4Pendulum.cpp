@@ -1,9 +1,3 @@
-///////////////////////////////////////
-// COMP/ELEC/MECH 450/550
-// Project 4
-// Authors: FILL ME OUT!!
-//////////////////////////////////////
-
 #include <iostream>
 #include <cmath>
 #include <functional>
