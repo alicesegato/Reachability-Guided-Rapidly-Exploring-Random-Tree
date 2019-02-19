@@ -8,9 +8,11 @@ An article by Shkolnik et al. (2009) proposes a motion planning algorithm for dy
 ## Cloning the Repository and Installing Dependencies
 To clone this repository through https:
 ```
-git clone https://github.com/shloksobti/Reachability-Guided-Rapidly-Exploring-Random-Tree
+git clone https://github.com/shloksobti/Reachability-Guided-Rapidly-Exploring-Random-Tree.git
 ```
 The major dependency for this project is the Open Motion Planning Library (OMPL) hosted by [Kavraki Lab](http://www.kavrakilab.org/). The installation instructions can be found at [OMPL Installation](http://ompl.kavrakilab.org/installation.html).
+
+Besides OMPL, the visualization tools rely on [Matplotlib](https://matplotlib.org/).
 
 ## File Structure
 ```
