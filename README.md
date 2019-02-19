@@ -22,5 +22,11 @@
 
 ```
 ## Usage
-
+A Makefile is provided. Depending on your system, you may have to
+adjust parts of the Makefile. Once compiled, two binary files are produced:
+ 1. Project3Pendulum, which prompts you for either planning or benchmarking,
+ what torque for the pendulum, and in the case of planning what planner to use,
+ and
+2. Project3Car, which prompts you for planning or benchmarking and in the case
+of planning what planner to use.
 
