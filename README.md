@@ -1,4 +1,4 @@
-# RG-RRT
+# Reachability-Guided-Rapidly-Exploring-Random-Tree
 
 ## Introduction
 This project plans motions for non-holonomic systems whose dynamics are described by an ordinary differential equation of the form ̇q=f(q,u),where q is a vector describing the current state of the system and u is a vector of control inputs to the system.  The systems planned for are a torque-controlled pendulum and a car-like vehicle moving in a street environment. Dynamically feasible and collision-free motions for these systems are computed using the RRT and KPIECE planners that are already implemented in OMPL. Additionally, a new planner called **Reachability-Guided RRT (RG-RRT)**, one of many variants of RRT, is implemented.
